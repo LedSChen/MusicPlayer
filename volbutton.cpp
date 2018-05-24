@@ -5,6 +5,7 @@ VolButton::~VolButton() {
 }
 
 VolButton::VolButton(QWidget *parent) :QWidget(parent) {
+
 	slider = new QSlider(Qt::Horizontal);
 	slider->setRange(0, 100);
 	slider->setStyleSheet("QSlider::groove:horizontal{border:0px;height:4px;}"
@@ -18,6 +19,7 @@ VolButton::VolButton(QWidget *parent) :QWidget(parent) {
 	button->setStyleSheet("QPushButton{background-color:rgba(255,255,255,0);border-style:solid;border-width:0px;border-color:rgba(255,255,255,0);}");
 	
 	connect(button, SIGNAL(clicked()), this, SLOT(button_Clicked()));
+	connect(slider,SIGNAL(valueChanged(int)), this, SIGNAL(volume_Changed(int)));
 
 	menu = new QMenu;
 	action = new QWidgetAction(this);
@@ -25,10 +27,10 @@ VolButton::VolButton(QWidget *parent) :QWidget(parent) {
 	menu->addAction(action);
 
 	QVBoxLayout *h = new QVBoxLayout;
-	
 	h->addWidget(button);
 	h->setContentsMargins(QMargins(0, 0, 10, 0));
 	setLayout(h);
+
 }
 
 int VolButton::get_Volume() const {
@@ -39,20 +41,24 @@ int VolButton::get_Volume() const {
 void VolButton::set_Slider_Visiable(bool a) {
 	slider->setVisible(a);
 }
-
+/*
 void VolButton::increase_Volume() {
 	slider->triggerAction(QSlider::SliderPageStepAdd);
+	emit volume_Changed(get_Volume());
 }
 
 void VolButton::descrease_Volume() {
 	slider->triggerAction(QSlider::SliderPageStepSub);
-}
+	emit volume_Changed(get_Volume());
+	int a = get_Volume();
 
+}
+*/
 void VolButton::set_Volume(int volume) {
 	slider->setValue(volume);
+	emit volume_Changed(volume);
 }
 
 void VolButton::button_Clicked() {
 	menu->exec(QCursor::pos());
-	
 }

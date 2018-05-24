@@ -2,6 +2,8 @@
 
 #include<QtWidgets>
 #include<QtMultimedia\qmediaplayer.h>
+#include<QtMultimedia\qmediaplaylist.h>
+#include<QtMultimedia\qmediametadata.h>
 #include"newButton.h"
 #include"volbutton.h"
 
@@ -15,57 +17,80 @@ class mainWindow : public QWidget{
 	friend class miniWindow;
 
 protected:
+
 	void mousePressEvent(QMouseEvent *);
 	void mouseMoveEvent(QMouseEvent *);
 	void mouseReleaseEvent(QMouseEvent *);
 
 private:
+	
 	void initUI();
+	void initPlayer();
+	void initConnection();
 
-	//鼠标按下的初始位置
-	QPoint lastPoint;
-	QPoint offset;
+	
+
+	QPoint startPoint;
+	QPoint windowPoint;
 	bool isDrag;
+
+	QStringList playList;
 
 	//歌名
 	QLabel *songName;
+
 	//歌手
 	QLabel *songSinger;
+
 	//歌曲专辑
 	QLabel *songAlbum;
+
 	//歌曲时间进度
 	QLabel *songTime;
+
 	//专辑图片
 	QLabel *albumImage;
 
 	//退出
 	newButton *exitMainWindow;
+
 	//切换mini窗口
 	newButton *toMiniWindow;
+
 	//隐藏窗口
 	newButton *hideMainWindow;
+
 	//开发者信息
 	newButton *developerInf;
+
 	//添加文件
 	newButton *addFile;
+
 	//显示歌词
 	newButton *showLrc;
+
 	//上一首
 	newButton *lastSong;
+
 	//暂停
 	newButton *pause;
+
 	//下一首
 	newButton *nextSong;
 	
 	//播放模式
 	newButton *playModeBar;
 	QMenu *playMode;
+
 	//单曲循环
 	QAction *single;
+
 	//列表循环
 	QAction *listCircle;
+
 	//随机播放
 	QAction *listRandom;
+
 	//声音按钮
 	VolButton *volSetting;
 
@@ -73,8 +98,11 @@ private:
 	//音乐列表
 	QTableWidget *playlistTable;
 
-	//音乐媒体列表
-	QMediaPlayer *mediaplayer;
+	//音乐媒体
+	QMediaPlayer *mediaPlayer;
+
+	//媒体列表
+	QMediaPlaylist *mediaList;
 
 	//进度条
 	QSlider *playSlider;
@@ -85,16 +113,36 @@ private:
 
 
 
+private slots:
+
+	//添加文件
+	void f_addFile();
+
+	//显示歌词
+	void f_showLrc();
+
+	//上一曲
+	void f_lastSong();
+
+	//暂停或者播放
+	void f_pause();
+
+	//下一曲
+	void f_nextSong();
+
+	//双击列表播放
+	void tablePlay(int,int);
+	
+	//设置音量
+	void setPlayerVolumn(int);
+
+	//更新Label标签
+	void updateLabel();
 
 public:
+
 	explicit mainWindow(QWidget *parent = 0);
 	~mainWindow();
-
-private slots:
-	
-	
-
-
 
 
 };

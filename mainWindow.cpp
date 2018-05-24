@@ -52,12 +52,15 @@ void mainWindow::initUI() {
 	QPixmap *albumjpg = new QPixmap();
 	albumjpg->load("Resources/default_album.jpg");
 	//调整专辑图片大小
-	QPixmap fitpixmap = albumjpg->scaled(100, 100, Qt::KeepAspectRatioByExpanding);
+	QPixmap fitpixmap = albumjpg->scaled(150, 150, Qt::KeepAspectRatioByExpanding);
 	albumImage->setPixmap(fitpixmap);
-	albumImage->setStyleSheet("QLabel{margin-left:20px}");
-	songName = new QLabel(tr("aaa"));
-	songSinger = new QLabel(tr("bbb"));
-	songAlbum = new QLabel(tr("bbb"));
+	albumImage->setStyleSheet("QLabel{margin-left:20px;margin-right:20px}");
+	songName = new QLabel(tr("Name"));
+	songName->setFont(QFont(QString::fromLocal8Bit("微软雅黑"), 15));
+	songSinger = new QLabel(tr("Singer"));
+	songSinger->setFont(QFont(QString::fromLocal8Bit("微软雅黑"), 10));
+	songAlbum = new QLabel(tr("Album"));
+	songAlbum->setFont(QFont(QString::fromLocal8Bit("微软雅黑"), 10));
 
 	QVBoxLayout *secondlineBox1 = new QVBoxLayout();
 	QHBoxLayout *secondlineBox = new QHBoxLayout();
@@ -70,17 +73,16 @@ void mainWindow::initUI() {
 
 
 	//第三行布局
-	QHBoxLayout *thridlineBox = new QHBoxLayout();
 	playSlider = new QSlider(Qt::Horizontal);
 	songTime = new QLabel(tr("00:00"));
 
+	QHBoxLayout *thridlineBox = new QHBoxLayout();
 	thridlineBox->addWidget(playSlider);
 	thridlineBox->addWidget(songTime);
 	thridlineBox->setContentsMargins(QMargins(10, 30, 10, 0));
 
 
 	//第四行布局
-	QHBoxLayout *forthlineBox = new QHBoxLayout();
 	addFile = new newButton();
 	addFile->set_Button_Icons(QIcon("Resources/addSong.png"), QIcon("Resources/addSong2.png"));
 	addFile->setIconSize(QSize(30, 30));
@@ -120,15 +122,16 @@ void mainWindow::initUI() {
 		"QPushButton::menu-indicator{image:none;}"
 		"QPushButton{margin-left:5px;}"
 	);
-	single = new QAction("single");
-	listCircle = new QAction("listCircle");
-	listRandom = new QAction("listRandom");
+	single = new QAction(u8"单曲循环");
+	listCircle = new QAction(u8"列表循环");
+	listRandom = new QAction(u8"随机播放");
 	playMode->addAction(single);
 	playMode->addAction(listCircle);
 	playMode->addAction(listRandom);
 	playModeBar->setMenu(playMode);
 	volSetting = new VolButton();
-	
+
+	QHBoxLayout *forthlineBox = new QHBoxLayout();
 	forthlineBox->addWidget(addFile);
 	forthlineBox->addWidget(showLrc);
 	forthlineBox->addWidget(lastSong);
@@ -142,10 +145,23 @@ void mainWindow::initUI() {
 	//第五行布局
 	playlistTable = new QTableWidget();
 	playlistTable->setObjectName(QStringLiteral("playlistTable"));
+	playlistTable->setColumnCount(1);
+	//隐藏行号列号
+	QHeaderView *hv1 = playlistTable->verticalHeader();
+	hv1->setHidden(true);
+	QHeaderView *hv2 = playlistTable->horizontalHeader();
+	hv2->setHidden(true);
+	//playlistTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+	playlistTable->setColumnWidth(0, playlistTable->width());
+	//playlistTable->setColumnWidth(1, 45);
+	playlistTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+	playlistTable->setShowGrid(false);
+	playlistTable->setStyleSheet("QTableWidget{padding-top:2px;padding-bottom:2px}");
+
 	QVBoxLayout *fifthlineBox = new QVBoxLayout();
 	fifthlineBox->addWidget(playlistTable);
 	fifthlineBox->setContentsMargins(QMargins(0, 20, 0, 10));
-	//playlistTable->setStyleSheet("QTableWidget{margin-top:20px;margin-buttom:20px;background:rgb(221,230,240)}");
+	
 	
 
 	//总布局
@@ -159,6 +175,143 @@ void mainWindow::initUI() {
 	
 }
 
+void mainWindow::initPlayer() {
+	
+	mediaPlayer = new QMediaPlayer(this);
+	mediaList = new QMediaPlaylist(this);
+	mediaPlayer->setPlaylist(mediaList);
+	volSetting->set_Volume(50);
+
+}
+
+
+void mainWindow::initConnection() {
+
+	connect(exitMainWindow, SIGNAL(clicked()), this, SLOT(close()));
+	connect(hideMainWindow, SIGNAL(clicked()), this, SLOT(showMinimized()));
+	connect(addFile, SIGNAL(clicked()), this, SLOT(f_addFile()));
+	connect(showLrc, SIGNAL(clicked()), this, SLOT(f_showLrc()));
+	connect(lastSong, SIGNAL(clicked()), this, SLOT(f_lastSong()));
+	connect(pause, SIGNAL(clicked()), this, SLOT(f_pause()));
+	connect(nextSong, SIGNAL(clicked()), this, SLOT(f_nextSong()));
+	connect(playlistTable, SIGNAL(cellDoubleClicked(int,int)), this, SLOT(tablePlay(int,int)));
+	connect(volSetting, SIGNAL(volume_Changed(int)), this, SLOT(setPlayerVolumn(int)));
+	connect(mediaPlayer, SIGNAL(metaDataChanged()), this, SLOT(updateLabel()));
+
+}
+
+void mainWindow::f_addFile() {
+	QStringList list = QFileDialog::getOpenFileNames(this, QString::fromLocal8Bit("添加音乐"), QString(), QString("MP3 (*.mp3)"));
+	//QStringList list = QFileDialog::getOpenFileNames(this, tr("选择歌曲"), "/", "*.mp3");
+	for each (QString str in list) {
+		if (playList.contains(str)) {
+			continue;
+		}
+		playList.append(str);
+		mediaList->addMedia(QUrl::fromLocalFile(str));
+		playlistTable->insertRow(playlistTable->rowCount());
+		int j = playlistTable->rowCount();
+		QTableWidgetItem *item = new QTableWidgetItem;
+		item->setFont(QFont(QString::fromLocal8Bit("微软雅黑"), 10));
+		playlistTable->setItem(playlistTable->rowCount() - 1, 0, item);
+		playlistTable->item(playlistTable->rowCount() - 1, 0)->setText(QFileInfo(str).baseName());
+		if (playList.size() == 1) {
+			mediaList->setCurrentIndex(0);
+		}
+	}
+	
+}
+
+void mainWindow::f_showLrc() {
+	
+}
+
+void mainWindow::f_lastSong() {
+
+	mediaList->setPlaybackMode(QMediaPlaylist::Loop);
+	mediaList->setCurrentIndex(mediaList->previousIndex());
+	mediaPlayer->play();
+
+}
+
+void mainWindow::f_pause() {
+
+	if (playList.isEmpty()) {
+		return;
+	}
+	if (mediaPlayer->state() == QMediaPlayer::PlayingState) {
+		mediaPlayer->pause();
+		pause->set_Button_Icons(QIcon("Resources/play.png"), QIcon("Resources/play2.png"));
+		pause->setIconSize(QSize(60, 60));
+	}
+	else {
+		mediaPlayer->play();
+		pause->set_Button_Icons(QIcon("Resources/pause.png"), QIcon("Resources/pause2.png"));
+		pause->setIconSize(QSize(60, 60));
+	}
+
+	QString author = mediaPlayer->metaData(QMediaMetaData::Author).toString();
+	QString title = mediaPlayer->metaData(QMediaMetaData::Title).toString();
+	QString albumTitle = mediaPlayer->metaData(QMediaMetaData::AlbumTitle).toString();
+	if (!author.isEmpty()) {
+		songName->setText(author);
+	}
+	if (!title.isEmpty()) {
+		songSinger->setText(title);
+	}
+	if (!albumTitle.isEmpty()) {
+		songAlbum->setText(albumTitle);
+	}
+}
+
+
+void mainWindow::f_nextSong() {
+
+	mediaList->setPlaybackMode(QMediaPlaylist::Loop);
+	mediaList->setCurrentIndex(mediaList->nextIndex());
+	mediaPlayer->play();
+
+}
+
+void mainWindow::tablePlay(int row, int col) {
+
+	QFile file(playList.at(row));
+	if (!file.open(QIODevice::ReadOnly)) {
+		playlistTable->removeRow(row);
+		playList.removeAt(row);
+		mediaList->removeMedia(row);
+		return;
+	}
+	file.close();
+	mediaList->setCurrentIndex(row);
+	mediaPlayer->play();
+	pause->set_Button_Icons(QIcon("Resources/pause.png"), QIcon("Resources/pause2.png"));
+	pause->setIconSize(QSize(60, 60));
+
+}
+
+void mainWindow::setPlayerVolumn(int vol) {
+	mediaPlayer->setVolume(vol);
+}
+
+void mainWindow::updateLabel() {
+	
+	QString author = mediaPlayer->metaData(QMediaMetaData::Author).toString();
+	QString title = mediaPlayer->metaData(QMediaMetaData::Title).toString();
+	QString albumTitle = mediaPlayer->metaData(QMediaMetaData::AlbumTitle).toString();
+	if (!author.isEmpty()) {
+		songName->setText(author);
+	}
+	if (!title.isEmpty()) {
+		songSinger->setText(title);
+	}
+	if (!albumTitle.isEmpty()) {
+		songAlbum->setText(albumTitle);
+	}
+
+}
+
+
 mainWindow::~mainWindow()
 {
 
@@ -169,28 +322,39 @@ mainWindow::mainWindow(QWidget *parent) :QWidget(parent){
 
 	/*初始化各个模块*/
 	initUI();
+	initPlayer();
+	initConnection();
 
 }
 
 
+bool isClickOnButton() {
+	int mouse_x = QCursor::pos().x();//鼠标点击处横坐标
+	int mouse_y = QCursor::pos().y();//鼠标点击处纵坐标
+	QWidget *action = QApplication::widgetAt(mouse_x, mouse_y);//获取鼠标点击处的控件
+	return action->inherits("newButton");//判断点击的是不是newButton
+}
+
 int qqq = 1;
 void mainWindow::mousePressEvent(QMouseEvent *e) {
-	if (e->button() == Qt::LeftButton)
+	if (e->button() == Qt::LeftButton && !isClickOnButton())
 	{
 		isDrag = true;
-		offset = e->globalPos() - frameGeometry().topLeft();
-
+		startPoint = e->globalPos();
+		windowPoint = frameGeometry().topLeft();
 	}
 }
 
 void mainWindow::mouseMoveEvent(QMouseEvent *e) {
-	if (e->buttons() & Qt::LeftButton) {
-		setCursor(Qt::PointingHandCursor);
+	if (e->buttons() & Qt::LeftButton && isDrag) {
+		//移动中的鼠标相对于最开始的时候的位置
+		QPoint offset = e->globalPos() - startPoint;
+		//setCursor(Qt::PointingHandCursor);
 		//实现移动操作
-		move(e->globalPos() - offset);
+		move(windowPoint + offset);
 	}
 }
 
-void mainWindow::mouseReleaseEvent(QMouseEvent *) {
+void mainWindow::mouseReleaseEvent(QMouseEvent *e) {
 	isDrag = false;
 }
